@@ -126,6 +126,16 @@ symbol xs                     =  token (string xs)
 
 
 --------------------------------------------------------------------
+
+identAlpha :: Parser String
+identAlpha = do x  <- alphanum
+                xs <- many alphanum
+                return (x:xs)
+                                         
+idOrNum :: Parser String
+idOrNum =  token identAlpha
+
+
 alphanumOrDot :: Parser Char
 alphanumOrDot = do s <- sat isAlphaNum
                    return s
@@ -137,9 +147,10 @@ identOrDot = do x  <- letter
                 xs <- many alphanumOrDot
                 return (x:xs)
                                          
-identifierOrDot :: Parser String
-identifierOrDot =  token identOrDot
+idOrDot :: Parser String
+idOrDot =  token identOrDot
 
+{-
 alphanumOrDotOrSpace :: Parser Char
 alphanumOrDotOrSpace = do s <- sat isAlphaNum
                           return s
@@ -152,59 +163,69 @@ identOrDotOrSpace :: Parser String
 identOrDotOrSpace = do xs <- many alphanumOrDotOrSpace
                        return xs
 
-identifierOrDotOrSpace :: Parser String
-identifierOrDotOrSpace =  token identOrDotOrSpace
+idOrDotOrSpace :: Parser String
+idOrDotOrSpace =  token identOrDotOrSpace
+-}
 
 intent :: Parser String
 intent = do symbol "{"
-            s <- stmt
+            s <- fields
             symbol "}"
             symbol "||"
             i <- intent
             return ("{" ++ s ++ "} || " ++ i)
           +++do symbol "{"
-                s <- stmt
+                s <- fields
                 symbol "}"
                 return ("{" ++ s ++ "}")
 
-stmt :: Parser String
-stmt = do a <- action
-          s <- stmt
-          return (a ++ s)
-        +++ do c <- category
-               s <- stmt
-               return (c ++ s)
-        +++ do d <- idata
-               s <- stmt
-               return (d ++ s)
-        +++ do t <- itype
-               s <- stmt
-               return (t ++ s)
-        +++ do c <- component
-               s <- stmt
-               return (c ++ s)
-        +++ do e <- extra
-               s <- stmt
-               return (e ++ s)
-        +++ do f <- flag
-               s <- stmt
-               return (f ++ s)
-        +++ return ""
+fields :: Parser String
+fields = do a <- action
+            s <- fields
+            return (a ++ s)
+          +++ do c <- category
+                 s <- fields
+                 return (c ++ s)
+          +++ do d <- idata
+                 s <- fields
+                 return (d ++ s)
+          +++ do t <- itype
+                 s <- fields
+                 return (t ++ s)
+          +++ do c <- component
+                 s <- fields
+                 return (c ++ s)
+          +++ do e <- extra
+                 s <- fields
+                 return (e ++ s)
+          +++ do f <- flag
+                 s <- fields
+                 return (f ++ s)
+          +++ return ""
         
 
 action :: Parser String
 action = do symbol "act"
             symbol "="
-            act <- identifierOrDot
+            act <- idOrDot
             return ("act=" ++ act ++ " ")
 
 
 category :: Parser String
 category = do symbol "cat"
               symbol "="
-              cat <- natural
-              return ("cat=" ++ (show cat) ++ " ")
+              symbol "["
+              cat <- idOrDot
+              cats <- categorySub
+              symbol "]"
+              return ("cat=[" ++ cat ++ cats ++ "] ")
 
+categorySub :: Parser String
+categorySub = do symbol ","
+                 cat <- idOrDot
+                 cats <- categorySub
+                 return ("," ++ cat ++ cats)
+               +++ return ""
 
 idata :: Parser String
 idata = do symbol "dat"
@@ -222,21 +243,24 @@ itype = do symbol "typ"
 component :: Parser String
 component = do symbol "cmp"
                symbol "="
-               pname <- identifierOrDot
+               pname <- idOrDot
                symbol "/"
-               cname <- identifierOrDot
-               return ("cmp=" ++ pname ++ "/" ++ cname ++ " ")
+               do cname <- idOrDot
+                  return ("cmp=" ++ pname ++ "/" ++ cname ++ " ")
+                +++ do symbol "."
+                       cname <- idOrDot
+                       return ("cmp=" ++ pname ++ "/." ++ cname ++ " ")
 
 extra :: Parser String
 extra = do symbol "["
-           i <- identifierOrDotOrSpace
+           i <- idOrNum
            e <- extraSub
            symbol "]"
            return (" [" ++ i ++ e ++ "] ")
            
 extraSub :: Parser String
 extraSub = do symbol ","
-              i <- identifierOrDotOrSpace
+              i <- idOrNum
               is <- extraSub
               return (", " ++ i ++ is)
             +++ return ""
@@ -244,9 +268,7 @@ extraSub = do symbol ","
            
 flag :: Parser String
 flag = do symbol "flg"
-          symbol "="
-          f <- symbol "non-null"
-          return ("flg=" ++ f ++ " ")
+          return "flg"
 
 eval :: String -> String
 eval xs = case parse intent xs of
