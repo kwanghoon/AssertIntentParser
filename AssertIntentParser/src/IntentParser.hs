@@ -259,17 +259,25 @@ extra = do symbol "["
            i <- idOrNum
            symbol "="
            v <- idOrNum
-           e <- extraSub
-           symbol "]"
-           return (" [" ++ i ++ "=" ++ v ++ e ++ "] ")
+           do symbol "[]"
+              e <- extraSub
+              symbol "]"
+              return (" [" ++ i ++ "=" ++ v ++ "[]" ++ e ++ "] ")
+            +++ do e <- extraSub
+                   symbol "]"
+                   return (" [" ++ i ++ "=" ++ v ++ e ++ "] ") 
+           
            
 extraSub :: Parser String
 extraSub = do symbol ","
               i <- idOrNum
               symbol "="
               v <- idOrNum
-              is <- extraSub
-              return (", " ++ i ++ "=" ++ v ++ is)
+              do symbol "[]"
+                 is <- extraSub
+                 return (", " ++ i ++ "=" ++ v ++ "[]" ++ is)
+               +++ do is <- extraSub
+                      return (", " ++ i ++ "=" ++ v ++ is)
             +++ return ""
            
 flag :: Parser String
