@@ -141,6 +141,8 @@ alphanumOrDot = do s <- sat isAlphaNum
                    return s
                  +++ do s <- sat (== '.')
                         return s
+                 +++ do s <- sat (== '_')               --updated 2014/12/04
+                        return s
 
 identOrDot :: Parser String
 identOrDot = do x  <- letter
@@ -251,24 +253,28 @@ component = do symbol "cmp"
                        cname <- idOrDot
                        return ("cmp=" ++ pname ++ "/." ++ cname ++ " ")
 
+--update extra and extraSub for type 12/05/14
 extra :: Parser String
 extra = do symbol "["
            i <- idOrNum
+           symbol "="
+           v <- idOrNum
            e <- extraSub
            symbol "]"
-           return (" [" ++ i ++ e ++ "] ")
+           return (" [" ++ i ++ "=" ++ v ++ e ++ "] ")
            
 extraSub :: Parser String
 extraSub = do symbol ","
               i <- idOrNum
+              symbol "="
+              v <- idOrNum
               is <- extraSub
-              return (", " ++ i ++ is)
+              return (", " ++ i ++ "=" ++ v ++ is)
             +++ return ""
-               
            
 flag :: Parser String
 flag = do symbol "flg"
-          return "flg"
+          return "flg "
 
 eval :: String -> String
 eval xs = case parse intent xs of
