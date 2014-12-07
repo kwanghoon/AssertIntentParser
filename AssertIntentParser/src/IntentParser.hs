@@ -254,15 +254,16 @@ component = do symbol "cmp"
                        return ("cmp=" ++ pname ++ "/." ++ cname ++ " ")
 
 --update extra and extraSub for type 12/05/14
+--update extra, extrasub and arr for type and array type 12/08/14
 extra :: Parser String
 extra = do symbol "["
            i <- idOrNum
            symbol "="
            v <- idOrNum
-           do symbol "[]"
+           do a <- symbol "[]"
               e <- extraSub
               symbol "]"
-              return (" [" ++ i ++ "=" ++ v ++ "[]" ++ e ++ "] ")
+              return (" [" ++ i ++ "=" ++ v ++ a ++ e ++ "] ")
             +++ do e <- extraSub
                    symbol "]"
                    return (" [" ++ i ++ "=" ++ v ++ e ++ "] ") 
@@ -273,9 +274,9 @@ extraSub = do symbol ","
               i <- idOrNum
               symbol "="
               v <- idOrNum
-              do symbol "[]"
+              do a <- arr
                  is <- extraSub
-                 return (", " ++ i ++ "=" ++ v ++ "[]" ++ is)
+                 return (", " ++ i ++ "=" ++ v ++ a ++ is)
                +++ do is <- extraSub
                       return (", " ++ i ++ "=" ++ v ++ is)
             +++ return ""
@@ -283,6 +284,12 @@ extraSub = do symbol ","
 flag :: Parser String
 flag = do symbol "flg"
           return "flg "
+          
+arr :: Parser String
+arr = do a1 <- symbol "[]"
+         a2 <- arr
+         return (a1 ++ a2)
+       +++ return ""
 
 eval :: String -> String
 eval xs = case parse intent xs of
