@@ -296,20 +296,3 @@ eval xs = case parse intent xs of
                [(n, [])] -> n
                [(_, out)] -> error ("unused input" ++ out)
                [] -> error "invalid input"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
