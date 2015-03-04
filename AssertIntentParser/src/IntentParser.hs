@@ -1,4 +1,4 @@
-module IntentParserWithDataStructure where
+module IntentParser where
 
 import Data.Char
 import Control.Monad
