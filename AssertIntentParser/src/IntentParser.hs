@@ -1,4 +1,4 @@
-module IntentParser where
+module IntentParserWithDataStructure where
 
 import Data.Char
 import Control.Monad
@@ -152,138 +152,123 @@ identOrDot = do x  <- letter
 idOrDot :: Parser String
 idOrDot =  token identOrDot
 
-{-
-alphanumOrDotOrSpace :: Parser Char
-alphanumOrDotOrSpace = do s <- sat isAlphaNum
-                          return s
-                        +++ do s <- sat (== '.')
-                               return s
-                        +++ do s <- sat (== ' ')
-                               return s
+type IntentSpec = [Intent]
+type Intent = [Field]
+data Field = Action String | Category [String] | Data String | Type String 
+             | Component String String | Extra [(String, String)] | Flag deriving Show
 
-identOrDotOrSpace :: Parser String
-identOrDotOrSpace = do xs <- many alphanumOrDotOrSpace
-                       return xs
-
-idOrDotOrSpace :: Parser String
-idOrDotOrSpace =  token identOrDotOrSpace
--}
-
-intent :: Parser String
+intent :: Parser IntentSpec
 intent = do symbol "{"
             s <- fields
             symbol "}"
             symbol "||"
             i <- intent
-            return ("{" ++ s ++ "} || " ++ i)
+            return (s : i)
           +++do symbol "{"
                 s <- fields
                 symbol "}"
-                return ("{" ++ s ++ "}")
+                return [s]
 
-fields :: Parser String
+fields :: Parser Intent
 fields = do a <- action
             s <- fields
-            return (a ++ s)
+            return (a : s)
           +++ do c <- category
                  s <- fields
-                 return (c ++ s)
+                 return (c : s)
           +++ do d <- idata
                  s <- fields
-                 return (d ++ s)
+                 return (d : s)
           +++ do t <- itype
                  s <- fields
-                 return (t ++ s)
+                 return (t : s)
           +++ do c <- component
                  s <- fields
-                 return (c ++ s)
+                 return (c : s)
           +++ do e <- extra
                  s <- fields
-                 return (e ++ s)
+                 return (e : s)
           +++ do f <- flag
                  s <- fields
-                 return (f ++ s)
-          +++ return ""
+                 return (f : s)
+          +++ return []
         
 
-action :: Parser String
+action :: Parser Field
 action = do symbol "act"
             symbol "="
             act <- idOrDot
-            return ("act=" ++ act ++ " ")
+            return (Action act)
 
 
-category :: Parser String
+category :: Parser Field
 category = do symbol "cat"
               symbol "="
               symbol "["
               cat <- idOrDot
-              cats <- categorySub
+              Category cats <- categorySub
               symbol "]"
-              return ("cat=[" ++ cat ++ cats ++ "] ")
+              return (Category (cat : cats))
 
-categorySub :: Parser String
+categorySub :: Parser Field
 categorySub = do symbol ","
                  cat <- idOrDot
-                 cats <- categorySub
-                 return ("," ++ cat ++ cats)
-               +++ return ""
+                 Category cats <- categorySub
+                 return (Category (cat : cats))
+               +++ return (Category [])
 
-idata :: Parser String
+idata :: Parser Field
 idata = do symbol "dat"
            symbol "="
            dat <- symbol "non-null"
-           return ("dat=" ++ dat ++ " ")
+           return (Data dat)
            
 
-itype :: Parser String
+itype :: Parser Field
 itype = do symbol "typ"
            symbol "="
            typ <- symbol "non-null"
-           return ("typ=" ++ typ ++ " ")
+           return (Type typ)
            
-component :: Parser String
+component :: Parser Field
 component = do symbol "cmp"
                symbol "="
                pname <- idOrDot
                symbol "/"
                do cname <- idOrDot
-                  return ("cmp=" ++ pname ++ "/" ++ cname ++ " ")
+                  return (Component pname cname)
                 +++ do symbol "."
                        cname <- idOrDot
-                       return ("cmp=" ++ pname ++ "/." ++ cname ++ " ")
+                       return (Component pname ("."  ++ cname))
 
---update extra and extraSub for type 12/05/14
---update extra, extrasub and arr for type and array type 12/08/14
-extra :: Parser String
+extra :: Parser Field
 extra = do symbol "["
            i <- idOrNum
            symbol "="
            v <- idOrNum
            do a <- symbol "[]"
-              e <- extraSub
+              Extra e <- extraSub
               symbol "]"
-              return (" [" ++ i ++ "=" ++ v ++ a ++ e ++ "] ")
-            +++ do e <- extraSub
+              return (Extra ((i, (v ++ a)) : e))
+            +++ do Extra e <- extraSub
                    symbol "]"
-                   return (" [" ++ i ++ "=" ++ v ++ e ++ "] ") 
+                   return (Extra ((i, v) : e)) 
            
-           
-extraSub :: Parser String
+extraSub :: Parser Field
 extraSub = do symbol ","
               i <- idOrNum
               symbol "="
               v <- idOrNum
               do a <- arr
-                 is <- extraSub
-                 return (", " ++ i ++ "=" ++ v ++ a ++ is)
-               +++ do is <- extraSub
-                      return (", " ++ i ++ "=" ++ v ++ is)
-            +++ return ""
+                 Extra is <- extraSub
+                 return (Extra ((i, (v ++ a)) : is))
+               +++ do Extra is <- extraSub
+                      return (Extra ((i, v) : is))
+            +++ return (Extra [])
            
-flag :: Parser String
+flag :: Parser Field
 flag = do symbol "flg"
-          return "flg "
+          return Flag
           
 arr :: Parser String
 arr = do a1 <- symbol "[]"
@@ -291,7 +276,7 @@ arr = do a1 <- symbol "[]"
          return (a1 ++ a2)
        +++ return ""
 
-eval :: String -> String
+eval :: String -> IntentSpec
 eval xs = case parse intent xs of
                [(n, [])] -> n
                [(_, out)] -> error ("unused input" ++ out)
