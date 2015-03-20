@@ -14,11 +14,8 @@ type IntentSpec = [Intent]
 type Intent = [Field]
 data Field = Action String | Category [String] | Data String | Type String 
              | Component String String | Extra [(String, String)] | Flag deriving (Show, Eq)
+             
 
-type ActionF = String
-
-instance Arbitrary ActionF where
-  arbitrary = oneof ["", "", ""]
 
 instance Arbitrary Field where
   arbitrary = oneof [ liftM Action arbitrary,
@@ -44,6 +41,46 @@ removeSameConstructor (Type x : xs) = Type x : removeSameConstructor (xs \\ [Typ
 removeSameConstructor (Component x1 x2 : xs) = Component x1 x2 : removeSameConstructor (xs \\ [Component y1 y2 | Component y1 y2 <- xs])
 removeSameConstructor (Extra x : xs) = Extra x : removeSameConstructor (xs \\ [Extra y | Extra y <- xs])
 removeSameConstructor (Flag : xs) = Flag : removeSameConstructor (xs \\ [Flag | Flag <- xs])
+
+
+data ActionField = ACT String
+
+instance Show ActionField where
+   show (ACT (act)) = "act=" ++ act
+
+instance Arbitrary ActionField where
+        arbitrary = do actionName <- elements ["com.android.action.Edit",
+                                               "com.android.action.Add",
+                                               "com.android.action.Delete"]
+                       return (ACT (actionName))
+
+
+
+data CategoryField = CAT String
+
+instance Show CategoryField where
+   show (CAT (cat)) = cat
+
+instance Arbitrary CategoryField where
+        arbitrary = do categoryName <- elements ["android.intent.category.APP_CALENDAR",
+                                                 "android.app.category.LAUNCHER",
+                                                 "android.intent.category.DEFAULT"]
+                       return (CAT (categoryName))
+
+
+genAction seed = unGen arbitrary (mkStdGen seed) 1 :: [ActionField]
+genCategory seed = unGen arbitrary (mkStdGen seed) 15 :: [CategoryField]
+
+
+
+
+
+
+
+
+
+
+
 
 
 
