@@ -1,6 +1,8 @@
 module ExtraElements where
 
 import Test.QuickCheck
+import Control.Monad
+import Test.QuickCheck.Instances.Tuple
 
 extraKeyElements = elements ["key1",
                              "key2",
@@ -9,4 +11,7 @@ extraKeyElements = elements ["key1",
 extraTypeElements = elements ["String",
                               "Integer",
                               "Boolean"]
-                         
+
+
+extraTupleList = listOf $ (extraKeyElements >*< extraTypeElements)
+

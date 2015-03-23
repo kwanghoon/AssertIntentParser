@@ -3,7 +3,8 @@ module TestQuick where
 import Test.QuickCheck
 import Test.QuickCheck.Arbitrary
 import Test.QuickCheck.Gen
-import System.Random
+import Test.QuickCheck.Random
+--import System.Random
 import Data.Char
 import Data.List
 import Control.Monad
@@ -18,6 +19,9 @@ import ComponentsElements
 import ExtraElements
 import FlagElements
 
+--cabal install quickCheck  --> 2.8
+--cabal install checkers    --> 0.4.2
+
 type IntentSpec = [Intent]
 type Intent = [Field]
 data Field = Action String | Category [String] | Data String | Type String 
@@ -25,13 +29,13 @@ data Field = Action String | Category [String] | Data String | Type String
 
 
 instance Arbitrary Field where
-  arbitrary = do n <- choose (1,13) :: Gen Int
+  arbitrary = do n <- choose (6,6) :: Gen Int
                  case n of
                       1 -> do act <- actionElements
                               return (Action act)
                               
-                      2 -> do cat <- categoryElements
-                              return (Category [cat])
+                      2 -> do cat <- categoryElementsList
+                              return (Category cat)
                               
                       3 -> do dat <- dataElements
                               return (Data dat)
@@ -43,10 +47,9 @@ instance Arbitrary Field where
                               cls <- classElements
                               return (Component pkg cls)
                               
-                      6 -> do key <- extraKeyElements
-                              typ <- extraTypeElements
-                              return (Extra [(key, typ)])
-                              
+                      6 -> do ext <- extraTupleList
+                              return (Extra ext)
+
                       7 -> return Flag
                       
                       8 -> do act <- arbitrary
@@ -68,7 +71,8 @@ instance Arbitrary Field where
                       13 -> do ext <- arbitrary
                                return (Extra ext)
                       
-genField seed = unGen arbitrary (mkStdGen seed) 15 :: [Field]
+genField seed = unGen arbitrary (mkQCGen seed) 15 :: [Field]
+--genField seed = unGen arbitrary (mkStdGen seed) 15 :: [Field]
 
 makeIntentSpecTestCase :: Int -> IntentSpec
 makeIntentSpecTestCase count = take count [x | x <- map (removeSameConstructor . genField) [1..count] ]
