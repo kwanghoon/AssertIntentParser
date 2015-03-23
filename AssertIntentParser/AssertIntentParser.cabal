@@ -19,5 +19,12 @@ executable AssertIntentParser
                    IntentParserWithDataStructure,
                    QuickCheck,
                    IntentParserWithQuickCheckForSemanticData,
-                   TestQuick
+                   TestQuick,
+                   ActionElements,
+                   CategoryElements,
+                   DataElements,
+                   TypeElements,
+                   ExtraElements,
+                   FlagElements,
+                   ComponentsElements
 

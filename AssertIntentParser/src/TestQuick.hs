@@ -10,6 +10,14 @@ import Control.Monad
 import System.IO.Unsafe
 import Data.Time.LocalTime
 
+import ActionElements
+import CategoryElements
+import DataElements
+import TypeElements 
+import ComponentsElements
+import ExtraElements
+import FlagElements
+
 type IntentSpec = [Intent]
 type Intent = [Field]
 data Field = Action String | Category [String] | Data String | Type String 
@@ -19,41 +27,24 @@ data Field = Action String | Category [String] | Data String | Type String
 instance Arbitrary Field where
   arbitrary = do n <- choose (1,13) :: Gen Int
                  case n of
-                      1 -> do act <- elements ["com.android.action.Edit",
-                                               "com.android.action.Add",
-                                               "com.android.action.Delete"]
+                      1 -> do act <- actionElements
                               return (Action act)
                               
-                      2 -> do cat <- elements ["android.intent.category.APP_CALENDAR",
-                                               "android.app.category.LAUNCHER",
-                                               "android.intent.category.DEFAULT"]
+                      2 -> do cat <- categoryElements
                               return (Category [cat])
                               
-                      3 -> do dat <- elements ["content://com.google.provider.NotePad/notes",
-                                               "content://contacts/people/1",
-                                               "tel:123"]
+                      3 -> do dat <- dataElements
                               return (Data dat)
                               
-                      4 -> do typ <- elements ["video/*",
-                                               "image/*",
-                                               "text/plain"]
+                      4 -> do typ <- typeElements
                               return (Type typ)
                               
-                      5 -> do pkg <- elements ["com.example.android.notepad",
-                                               "com.enterpriseandroid.androidSecurity",
-                                               "com.example.cafe"]
-                              cls <- elements ["com.example.android.notepad.NoteEditor",
-                                               ".NoteEditor",
-                                               ".MainActivity",
-                                               ".CafeActivity"]
+                      5 -> do pkg <- packageElements
+                              cls <- classElements
                               return (Component pkg cls)
                               
-                      6 -> do key <- elements ["key1",
-                                               "key2",
-                                               "key3"]
-                              typ <- elements ["String",
-                                               "Integer",
-                                               "Boolean"]
+                      6 -> do key <- extraKeyElements
+                              typ <- extraTypeElements
                               return (Extra [(key, typ)])
                               
                       7 -> return Flag
