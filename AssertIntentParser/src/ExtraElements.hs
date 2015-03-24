@@ -1,7 +1,6 @@
 module ExtraElements where
 
 import Test.QuickCheck
-import Control.Monad
 import Test.QuickCheck.Instances.Tuple
 
 extraKeyElements = elements ["key1",

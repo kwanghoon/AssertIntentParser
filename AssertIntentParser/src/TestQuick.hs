@@ -1,15 +1,12 @@
 module TestQuick where
 
 import Test.QuickCheck
-import Test.QuickCheck.Arbitrary
 import Test.QuickCheck.Gen
 import Test.QuickCheck.Random
---import System.Random
-import Data.Char
 import Data.List
-import Control.Monad
+
+import System.Random
 import System.IO.Unsafe
-import Data.Time.LocalTime
 
 import ActionElements
 import CategoryElements
@@ -29,7 +26,7 @@ data Field = Action String | Category [String] | Data String | Type String
 
 
 instance Arbitrary Field where
-  arbitrary = do n <- choose (6,6) :: Gen Int
+  arbitrary = do n <- choose (1,14) :: Gen Int
                  case n of
                       1 -> do act <- actionElements
                               return (Action act)
@@ -70,9 +67,14 @@ instance Arbitrary Field where
                               
                       13 -> do ext <- arbitrary
                                return (Extra ext)
-                      
-genField seed = unGen arbitrary (mkQCGen seed) 15 :: [Field]
+                               
+                      14 -> return Flag
+
+
+
+--genField seed = unGen arbitrary (mkQCGen randInteger) 15 :: [Field]
 --genField seed = unGen arbitrary (mkStdGen seed) 15 :: [Field]
+genField seed = unGen arbitrary (mkQCGen (unsafePerformIO (getStdRandom (randomR (-9223372036854775808, 9223372036854775807))))) 15 :: [Field]
 
 makeIntentSpecTestCase :: Int -> IntentSpec
 makeIntentSpecTestCase count = take count [x | x <- map (removeSameConstructor . genField) [1..count] ]
@@ -87,13 +89,6 @@ removeSameConstructor (Type x : xs) = Type x : removeSameConstructor (xs \\ [Typ
 removeSameConstructor (Component x1 x2 : xs) = Component x1 x2 : removeSameConstructor (xs \\ [Component y1 y2 | Component y1 y2 <- xs])
 removeSameConstructor (Extra x : xs) = Extra x : removeSameConstructor (xs \\ [Extra y | Extra y <- xs])
 removeSameConstructor (Flag : xs) = Flag : removeSameConstructor (xs \\ [Flag | Flag <- xs])
-
-
-
-
-
-
-
 
 
 
