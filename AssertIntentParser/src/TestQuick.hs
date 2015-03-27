@@ -484,7 +484,17 @@ makeExtra ((k,t,v):xs) = case t of
                                 "array of floats" -> " --efa " ++ k ++ " " ++ v ++ makeExtra xs
                                 _ ->  " --es " ++ k ++ " " ++ v ++ makeExtra xs
 
-make :: Int -> String -> IO ()
-make count spec = putStr (makeAdbCommand (replaceComponent (eval spec) (makeTestCaseOfIntentSpec count)))
 
+addIntentSpecUsingInputIntent :: IntentSpec -> IntentSpec -> IntentSpec
+addIntentSpecUsingInputIntent _ [] = []
+addIntentSpecUsingInputIntent (s:ss) (d:ds) = (d ++ s) : addIntentSpecUsingInputIntent (s:ss) ds
+
+removeDuplicateConstructorIntentSpec :: IntentSpec -> IntentSpec
+removeDuplicateConstructorIntentSpec xs = map removeDuplicateConstructor xs
+
+make :: Int -> String -> IO ()
+make count spec = putStr (makeAdbCommand addIntentUsingInput)
+                  where inputSpec = (eval spec)
+                        replaceComp = (replaceComponent inputSpec (makeTestCaseOfIntentSpec count))
+                        addIntentUsingInput = removeDuplicateConstructorIntentSpec (addIntentSpecUsingInputIntent inputSpec replaceComp)
 
