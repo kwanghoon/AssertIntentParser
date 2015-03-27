@@ -9,7 +9,6 @@ executable AssertIntentParser
   main-is:         Main.hs
   build-depends:   
                    base >= 4,
-                   time >=1.4.2 && <1.5,
                    Cabal >=1.18.1 && <1.19,
                    checkers >=0.4.2 && <0.5,
                    QuickCheck >=2.8 && <2.9,
