@@ -387,26 +387,26 @@ instance Arbitrary Field where
                       7 -> do flg <- flagElementsList 
                               return (Flag flg)
                       
-                      8 -> do act <- arbitrary
+                      8 -> do act <- actionArbitrary
                               return (Action act)
                               
-                      9 -> do cat <- arbitrary
+                      9 -> do cat <- categoryArbitrary
                               return (Category cat)
                               
-                      10 -> do dat <- arbitrary
+                      10 -> do dat <- dataArbitrary
                                return (Data dat)
                               
-                      11 -> do typ <- arbitrary
+                      11 -> do typ <- typeArbitrary
                                return (Type typ)
 
-                      12 -> do pkg <- arbitrary
-                               cls <- arbitrary
+                      12 -> do pkg <- componentsArbitrary
+                               cls <- componentsArbitrary
                                return (Component pkg cls)
 
-                      13 -> do ext <- arbitrary
+                      13 -> do ext <- extraArbitrary
                                return (Extra ext)
 
-                      14 -> do flg <- arbitrary 
+                      14 -> do flg <- flagArbitrary 
                                return (Flag flg)
 
 
@@ -453,44 +453,38 @@ addAndRemoveComponentFix (Component x1 x2 : ss) ds = Component x1 x2 : (ds \\ [C
 
 makeAdbCommand :: IntentSpec -> String
 makeAdbCommand [] = []
-makeAdbCommand (i:is) = "adb shell am start" ++ makeIntentCommand i ++ "," ++ makeAdbCommand is
+makeAdbCommand (i:is) = "adb shell am start" ++ makeIntentCommand i ++ "\n" ++ makeAdbCommand is
 
 makeIntentCommand :: Intent -> String
 makeIntentCommand [] = []
-makeIntentCommand (Action x : xs) = " -a " ++ removeErrorString x ++ makeIntentCommand xs
+makeIntentCommand (Action x : xs) = " -a " ++ x ++ makeIntentCommand xs
 makeIntentCommand (Category x : xs) = makeCagegory x ++ makeIntentCommand xs
-makeIntentCommand (Data x : xs) = " -d " ++ removeErrorString x ++ makeIntentCommand xs
-makeIntentCommand (Type x : xs) = " -t " ++ removeErrorString x ++ makeIntentCommand xs
-makeIntentCommand (Component x1 x2 : xs) = " -n " ++ removeErrorString x1 ++ "/" ++ removeErrorString x2 ++ makeIntentCommand xs
+makeIntentCommand (Data x : xs) = " -d " ++ x ++ makeIntentCommand xs
+makeIntentCommand (Type x : xs) = " -t " ++ x ++ makeIntentCommand xs
+makeIntentCommand (Component x1 x2 : xs) = " -n " ++ x1 ++ "/" ++ x2 ++ makeIntentCommand xs
 makeIntentCommand (Extra x : xs)  = makeExtra x ++ makeIntentCommand xs
 makeIntentCommand (Flag x : xs) = makeIntentCommand xs
 
 makeCagegory :: [String] -> String
 makeCagegory [] = []
-makeCagegory (x:xs) = " -c " ++ removeErrorString x ++ makeCagegory xs
+makeCagegory (x:xs) = " -c " ++ x ++ makeCagegory xs
 
 makeExtra :: [(String, String, String)] -> String
 makeExtra [] = []
 makeExtra ((k,t,v):xs) = case t of
-                                "string" -> " --es " ++ removeErrorString k ++ " " ++ removeErrorString v ++ makeExtra xs
-                                "boolean" -> " --ez " ++ removeErrorString k ++ " " ++ removeErrorString v ++ makeExtra xs
-                                "integer" -> " --ei " ++ removeErrorString k ++ " " ++ removeErrorString v ++ makeExtra xs
-                                "long" -> " --el " ++ removeErrorString k ++ " " ++ removeErrorString v ++ makeExtra xs
-                                "float" -> " --ef " ++ removeErrorString k ++ " " ++ removeErrorString v ++ makeExtra xs
-                                "URI" -> " --eu " ++ removeErrorString k ++ " " ++ removeErrorString v ++ makeExtra xs
-                                "component name" -> " --ecn " ++ removeErrorString k ++ " " ++ removeErrorString v ++ makeExtra xs
-                                "array of integers" -> " --eia " ++ removeErrorString k ++ " " ++ removeErrorString v ++ makeExtra xs
-                                "array of longs" -> " --ela " ++ removeErrorString k ++ " " ++ removeErrorString v ++ makeExtra xs
-                                "array of floats" -> " --efa " ++ removeErrorString k ++ " " ++ removeErrorString v ++ makeExtra xs
-                                _ ->  " --es " ++ removeErrorString k ++ " " ++ removeErrorString v ++ makeExtra xs
+                                "string" -> " --es " ++ k ++ " " ++ v ++ makeExtra xs
+                                "boolean" -> " --ez " ++ k ++ " " ++ v ++ makeExtra xs
+                                "integer" -> " --ei " ++ k ++ " " ++ v ++ makeExtra xs
+                                "long" -> " --el " ++ k ++ " " ++ v ++ makeExtra xs
+                                "float" -> " --ef " ++ k ++ " " ++ v ++ makeExtra xs
+                                "URI" -> " --eu " ++ k ++ " " ++ v ++ makeExtra xs
+                                "component name" -> " --ecn " ++ k ++ " " ++ v ++ makeExtra xs
+                                "array of integers" -> " --eia " ++ k ++ " " ++ v ++ makeExtra xs
+                                "array of longs" -> " --ela " ++ k ++ " " ++ v ++ makeExtra xs
+                                "array of floats" -> " --efa " ++ k ++ " " ++ v ++ makeExtra xs
+                                _ ->  " --es " ++ k ++ " " ++ v ++ makeExtra xs
 
-removeErrorString :: String -> String
-removeErrorString xs = clrxs
-                       where xs1 = filter (/= ' ') xs
-                             xs2 = filter (/= ',') xs1
-                             clrxs = filter (/= ';') xs2
-
-make :: Int -> String -> String
-make count spec = makeAdbCommand (replaceComponent (eval spec) (makeTestCaseOfIntentSpec count))
+make :: Int -> String -> IO ()
+make count spec = putStr (makeAdbCommand (replaceComponent (eval spec) (makeTestCaseOfIntentSpec count)))
 
 

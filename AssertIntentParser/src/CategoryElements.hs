@@ -11,4 +11,7 @@ listOf : Generates a list of random length
 listOf1 : Generates a non-empty list of random length
 -}
 
-categoryElementsList = listOf $ categoryElements
+categoryElementsList = listOf1 $ categoryElements
+
+
+categoryArbitrary = listOf1 $ listOf1 $ elements (['a'..'z'] ++ ['A'..'Z'] ++ ['.', '_', '-'])

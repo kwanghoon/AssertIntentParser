@@ -1,6 +1,7 @@
 module ExtraElements where
 
 import Test.QuickCheck
+import Test.QuickCheck.Gen
 import Test.QuickCheck.Instances.Tuple
 
 extraKeyElements = elements ["key1",
@@ -22,5 +23,14 @@ extraValueElements = elements ["it is string value",
                                "100",
                                "3.14"]
 
-extraTupleList = listOf $ ((>**<) extraKeyElements extraTypeElements extraValueElements)
+extraTupleList = listOf1 $ ((>**<) extraKeyElements extraTypeElements extraValueElements)
+
+keyArbitrary = listOf1 $ elements (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'])
+
+typeArbitrary = listOf1 $ elements (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ ['_'])
+
+valueArbitrary = listOf1 $ elements (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ ['.', '_', '-', '+'])
+
+extraArbitrary = listOf1 $ ((>**<) keyArbitrary typeArbitrary valueArbitrary)
+
 
