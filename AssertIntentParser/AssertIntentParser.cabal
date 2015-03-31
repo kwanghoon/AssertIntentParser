@@ -6,7 +6,7 @@ author:         kmp
 
 executable AssertIntentParser
   hs-source-dirs:  src
-  main-is:         Main.hs
+  main-is:         TestQuick.hs
   build-depends:   
                    base >= 4,
                    Cabal >=1.18.1 && <1.19,
@@ -15,17 +15,17 @@ executable AssertIntentParser
                    random >=1.0.1 && <1.1
   ghc-options:     -Wall
   other-modules:   
-                   IntentParser,
-                   Test,
-                   IntentParserWithDataStructure,
-                   QuickCheck,
-                   IntentParserWithQuickCheckForSemanticData,
-                   TestQuick,
                    ActionElements,
                    CategoryElements,
+                   ComponentsElements,
                    DataElements,
-                   TypeElements,
                    ExtraElements,
                    FlagElements,
-                   ComponentsElements
+                   IntentParser,
+                   IntentParserWithDataStructure,
+                   IntentParserWithQuickCheckForSemanticData,
+                   Main,
+                   QuickCheck,
+                   Test,
+                   TypeElements
 

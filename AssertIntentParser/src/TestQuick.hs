@@ -1,5 +1,3 @@
-module TestQuick where
-
 import Test.QuickCheck
 import Test.QuickCheck.Gen
 import Test.QuickCheck.Random
@@ -7,6 +5,7 @@ import Data.List
 
 import System.Random
 import System.IO.Unsafe
+import System.Environment
 
 import ActionElements
 import CategoryElements
@@ -202,6 +201,8 @@ alphanumOrPlusMinus = do s <- sat isAlphaNum
                               return s
                        +++ do s <- sat (== '-')
                               return s
+                       +++ do s <- sat (== '_')
+                              return s
                        +++ do s <- sat (== '.')
                               return s
 
@@ -300,9 +301,9 @@ component = do symbol "cmp"
 
 extra :: Parser Field
 extra = do symbol "["
-           k <- idOrNum
+           k <- idOrDot
            symbol "="
-           t <- idOrNum
+           t <- idOrDot
            do a <- symbol "[]"
               v <- value
               Extra e <- extraSub
@@ -315,9 +316,9 @@ extra = do symbol "["
            
 extraSub :: Parser Field
 extraSub = do symbol ","
-              k <- idOrNum
+              k <- idOrDot
               symbol "="
-              t <- idOrNum
+              t <- idOrDot
               do a <- arr
                  v <- value
                  Extra e <- extraSub
@@ -409,10 +410,7 @@ instance Arbitrary Field where
                       14 -> do flg <- flagArbitrary 
                                return (Flag flg)
 
-
---genField seed = unGen arbitrary (mkQCGen randInteger) 15 :: [Field]
---genField seed = unGen arbitrary (mkStdGen seed) 15 :: [Field]
-genField seed = unGen arbitrary (mkQCGen (unsafePerformIO (getStdRandom (randomR (-9223372036854775808, 9223372036854775807))))) 15 :: [Field]
+genField seed = unGen arbitrary (mkQCGen (unsafePerformIO (getStdRandom (randomR (-9223372036854775807, 9223372036854775806))))) 15 :: [Field]
 
 makeTestCaseOfIntentSpec :: Int -> IntentSpec
 makeTestCaseOfIntentSpec count = take count [x | x <- map (removeDuplicateConstructor . genField) [1..count] ]
@@ -444,16 +442,18 @@ fstExtra (x,_,_) = x
 removeDuplicateExtraKeys :: Field -> Field
 removeDuplicateExtraKeys (Extra (xs)) = Extra (rmdupsExtra xs)
 
-replaceComponent :: IntentSpec -> IntentSpec -> IntentSpec
+replaceComponent :: Intent -> IntentSpec -> IntentSpec
 replaceComponent _ [] = []
-replaceComponent (s:ss) (d:ds) = addAndRemoveComponentFix [Component x1 x2 | Component x1 x2 <- s] d : replaceComponent (s:ss) ds
+replaceComponent s (d:ds) = addAndRemoveComponentFix [Component x1 x2 | Component x1 x2 <- s] d : replaceComponent s ds
 
 addAndRemoveComponentFix :: Intent -> Intent -> Intent
 addAndRemoveComponentFix (Component x1 x2 : ss) ds = Component x1 x2 : (ds \\ [Component y1 y2 | Component y1 y2 <- ds])
 
-makeAdbCommand :: IntentSpec -> String
-makeAdbCommand [] = []
-makeAdbCommand (i:is) = "adb shell am start" ++ makeIntentCommand i ++ "\n" ++ makeAdbCommand is
+makeAdbCommand :: Int -> IntentSpec -> String
+makeAdbCommand _ [] = []
+makeAdbCommand 0 (i:is) = "adb shell am start" ++ makeIntentCommand i ++ "\n" ++ makeAdbCommand 0 is
+makeAdbCommand 1 (i:is) = "adb shell am broadcast" ++ makeIntentCommand i ++ "\n" ++ makeAdbCommand 1 is
+makeAdbCommand 2 (i:is) = "adb shell am startservice" ++ makeIntentCommand i ++ "\n" ++ makeAdbCommand 2 is
 
 makeIntentCommand :: Intent -> String
 makeIntentCommand [] = []
@@ -484,17 +484,49 @@ makeExtra ((k,t,v):xs) = case t of
                                 "array of floats" -> " --efa " ++ k ++ " " ++ v ++ makeExtra xs
                                 _ ->  " --es " ++ k ++ " " ++ v ++ makeExtra xs
 
-
-addIntentSpecUsingInputIntent :: IntentSpec -> IntentSpec -> IntentSpec
+addIntentSpecUsingInputIntent :: Intent -> IntentSpec -> IntentSpec
 addIntentSpecUsingInputIntent _ [] = []
-addIntentSpecUsingInputIntent (s:ss) (d:ds) = (d ++ s) : addIntentSpecUsingInputIntent (s:ss) ds
+addIntentSpecUsingInputIntent s (d:ds) = (d ++ s) : addIntentSpecUsingInputIntent s ds
 
 removeDuplicateConstructorIntentSpec :: IntentSpec -> IntentSpec
 removeDuplicateConstructorIntentSpec xs = map removeDuplicateConstructor xs
 
-make :: Int -> String -> IO ()
-make count spec = putStr (makeAdbCommand addIntentUsingInput)
-                  where inputSpec = (eval spec)
-                        replaceComp = (replaceComponent inputSpec (makeTestCaseOfIntentSpec count))
-                        addIntentUsingInput = removeDuplicateConstructorIntentSpec (addIntentSpecUsingInputIntent inputSpec replaceComp)
+addRandomUsingInputIntent :: Intent -> IntentSpec -> IntentSpec
+addRandomUsingInputIntent _ [] = []
+addRandomUsingInputIntent s (d:ds) = (s ++ d) : addRandomUsingInputIntent s ds
+
+passOnly :: Int -> IntentSpec -> IntentSpec
+passOnly _ [] = []
+passOnly count (s:ss) = addRandomUsingInputIntent s (replaceComponent s (makeTestCaseOfIntentSpec count)) ++ passOnly count ss
+
+randomUsingSpec :: Int -> IntentSpec -> IntentSpec
+randomUsingSpec _ [] = []
+randomUsingSpec count (s:ss) = addIntentSpecUsingInputIntent s (replaceComponent s (makeTestCaseOfIntentSpec count)) ++ randomUsingSpec count ss
+
+randomOnly :: Int -> IntentSpec -> IntentSpec
+randomOnly _ [] = []
+randomOnly count (s:ss) = (replaceComponent s (makeTestCaseOfIntentSpec count)) ++ randomOnly count ss
+
+make :: Int -> Int -> Int -> String -> IO ()
+make 0 component count spec = putStr (makeAdbCommand component randomIntent)
+                                 where inputSpec = (eval spec)
+                                       randomIntent = removeDuplicateConstructorIntentSpec (passOnly count inputSpec)
+make 1 component count spec = putStr (makeAdbCommand component randomIntent)
+                                 where inputSpec = (eval spec)
+                                       randomIntent = removeDuplicateConstructorIntentSpec (randomUsingSpec count inputSpec)
+make 2 component count spec = putStr (makeAdbCommand component randomIntent)
+                                 where inputSpec = (eval spec)
+                                       randomIntent = removeDuplicateConstructorIntentSpec (randomOnly count inputSpec)
+
+main :: IO ()
+main = do args <- getArgs
+          make (castInt 0 args) (castInt 1 args) (castInt 2 args) (last args)
+
+castInt :: Int -> [String] -> Int
+castInt 0 (arg:args) = read arg :: Int
+castInt (n+1) (arg:args) = castInt n args
+
+-- >ghc --make TestQuick.hs
+
+
 
