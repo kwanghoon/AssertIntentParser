@@ -6,6 +6,7 @@ import Test.QuickCheck.Instances.Tuple
 import Data.List
 
 import System.Random
+import System.IO
 import System.IO.Unsafe
 import System.Environment
 
@@ -565,17 +566,28 @@ instance Arbitrary Field where
                       14 -> do flg <- flagArbitrary 
                                return (Flag flg)
 
-makeExtraType seed = unGen arbitrary (mkQCGen (unsafePerformIO (getStdRandom (randomR (-9223372036854775807, 9223372036854775806))))) 15 :: [ExtraType]
-
+makeExtraType = unGen arbitrary (mkQCGen (unsafePerformIO (getStdRandom (randomR (-9223372036854775807, 9223372036854775806))))) 15 :: [ExtraType]
 
 extraTupleList :: Gen [(String, ExtraType)]
-extraTupleList = listOf1 $ ((>*<) extraKeyElements (elements (makeExtraType 1)))
+extraTupleList = listOf1 $ ((>*<) extraKeyElements (elements (makeExtraType)))
+
+--extraTupleList' :: Gen [(String, ExtraType)]
+--extraTupleList' = listOf1 $ ((>*<) extraKeyElements (oneof (arbitrary)))
 
 extraArbitrary :: Gen [(String, ExtraType)]
-extraArbitrary = listOf1 $ ((>*<) keyArbitrary (elements (makeExtraType 1)))
+extraArbitrary = listOf1 $ ((>*<) keyArbitrary (elements (makeExtraType)))
+
+{-
+instance (Arbitrary String, Arbitrary ExtraType) => Arbitrary (String, ExtraType) where
+  arbitrary = do n <- choose (1,2) :: Gen Int
+                 case n of
+                      1 -> do key <- extraKeyElements
+                              typeAndValue <- arbitrary
+                              return (key, typeAndValue)
+-}
 
 instance Arbitrary ExtraType where
-  arbitrary = do n <- choose (1,14) :: Gen Int
+  arbitrary = do n <- choose (1,20) :: Gen Int
                  case n of
                       1 -> do str <- stringTypeElements
                               return (StringType str)
@@ -608,7 +620,7 @@ instance Arbitrary ExtraType where
                       10 -> do floata <- floatArrayElements
                                return (FloatArray floata)
                                
-                      11 -> do str <- arbitrary
+                      11 -> do str <- stringTypeArbitrary
                                return (StringType str)
                               
                       12 -> do bol <- arbitrary
@@ -717,18 +729,18 @@ makeExtra ((k, FloatArray vs) : xs)             = " --efa " ++ k ++ " " ++ (make
 
 makeIntValueArray :: [Int] -> String
 makeIntValueArray [] = ""
-makeIntValueArray (x:[]) = (show x) ++ " "
-makeIntValueArray (x:xs) = (show x) ++ ", "
+makeIntValueArray (x:[]) = (show x) ++ " " ++ makeIntValueArray []
+makeIntValueArray (x:xs) = (show x) ++ ", " ++ makeIntValueArray xs
 
 makeLongValueArray :: [Integer] -> String
 makeLongValueArray [] = ""
-makeLongValueArray (x:[]) = (show x) ++ " "
-makeLongValueArray (x:xs) = (show x) ++ ", "
+makeLongValueArray (x:[]) = (show x) ++ " " ++ makeLongValueArray []
+makeLongValueArray (x:xs) = (show x) ++ ", " ++ makeLongValueArray xs
 
 makeFloatValueArray :: [Float] -> String
 makeFloatValueArray [] = ""
-makeFloatValueArray (x:[]) = (show x) ++ " "
-makeFloatValueArray (x:xs) = (show x) ++ ", "
+makeFloatValueArray (x:[]) = (show x) ++ " " ++ makeFloatValueArray []
+makeFloatValueArray (x:xs) = (show x) ++ ", " ++ makeFloatValueArray xs
 
 {-
 data ExtraType = StringType String | BooleanType Bool | IntegerType Int | LongType Integer | FloatType Float
@@ -772,12 +784,13 @@ make 2 component count spec = putStr (makeAdbCommand component randomIntent)
                                        randomIntent = removeDuplicateConstructorIntentSpec (randomOnly count inputSpec)
 
 main :: IO ()
-main = do args <- getArgs
+main = do hSetEncoding stdout utf8
+          args <- getArgs
           make (castInt 0 args) (castInt 1 args) (castInt 2 args) (last args)
 
 castInt :: Int -> [String] -> Int
 castInt 0 (arg:args) = read arg :: Int
-castInt (n+1) (arg:args) = castInt n args
+castInt n (arg:args) = castInt (n-1) args
 
 
 -- >ghc --make Main.hs

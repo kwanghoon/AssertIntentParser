@@ -15,6 +15,8 @@ stringTypeElements = elements ["it is string value1",
                                "it is string value4",
                                "it is string value5"]
                                
+stringTypeArbitrary = listOf1 $ elements (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ [' ', '.', '_', '-', ':', '/', '?', '@'])
+
 booleanTypeElements = elements [True, False]
 
 intTypeElements :: Gen Int
