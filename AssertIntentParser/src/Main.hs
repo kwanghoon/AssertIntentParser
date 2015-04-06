@@ -1,8 +1,8 @@
-module Main where
 
 import Test.QuickCheck
 import Test.QuickCheck.Gen
 import Test.QuickCheck.Random
+import Test.QuickCheck.Instances.Tuple
 import Data.List
 
 import System.Random
@@ -537,8 +537,8 @@ instance Arbitrary Field where
                               cls <- classElements
                               return (Component pkg cls)
                               
-                      6 -> do ext <- extraTupleList
-                              return (Extra ext)
+                      6 -> do exts <- extraTupleList
+                              return (Extra exts)
 
                       7 -> do flg <- flagElementsList 
                               return (Flag flg)
@@ -552,18 +552,27 @@ instance Arbitrary Field where
                       10 -> do dat <- dataArbitrary
                                return (Data dat)
                               
-                      11 -> do typ <- typeArbitrary
+                      11 -> do typ <- typArbitrary
                                return (Type typ)
 
                       12 -> do pkg <- componentsArbitrary
                                cls <- componentsArbitrary
                                return (Component pkg cls)
 
-                      13 -> do ext <- extraArbitrary
-                               return (Extra ext)
+                      13 -> do exts <- extraArbitrary
+                               return (Extra exts)
 
                       14 -> do flg <- flagArbitrary 
                                return (Flag flg)
+
+makeExtraType seed = unGen arbitrary (mkQCGen (unsafePerformIO (getStdRandom (randomR (-9223372036854775807, 9223372036854775806))))) 15 :: [ExtraType]
+
+
+extraTupleList :: Gen [(String, ExtraType)]
+extraTupleList = listOf1 $ ((>*<) extraKeyElements (elements (makeExtraType 1)))
+
+extraArbitrary :: Gen [(String, ExtraType)]
+extraArbitrary = listOf1 $ ((>*<) keyArbitrary (elements (makeExtraType 1)))
 
 instance Arbitrary ExtraType where
   arbitrary = do n <- choose (1,14) :: Gen Int
@@ -631,10 +640,13 @@ instance Arbitrary ExtraType where
                                return (FloatArray floata)
                               
 
+
 genField seed = unGen arbitrary (mkQCGen (unsafePerformIO (getStdRandom (randomR (-9223372036854775807, 9223372036854775806))))) 15 :: [Field]
+
 
 makeTestCaseOfIntentSpec :: Int -> IntentSpec
 makeTestCaseOfIntentSpec count = take count [x | x <- map (removeDuplicateConstructor . genField) [1..count] ]
+
 
 removeDuplicateConstructor :: Intent -> Intent
 removeDuplicateConstructor [] = []
@@ -653,12 +665,12 @@ rmdups (x : xs) = x : rmdups (filter (/=x) xs)
 removeDuplicateCategoryList :: Field -> Field
 removeDuplicateCategoryList (Category (xs)) = Category (rmdups xs)
 
-rmdupsExtra :: Eq a => [(a,b,c)] -> [(a,b,c)]
+rmdupsExtra :: Eq a => [(a,b)] -> [(a,b)]
 rmdupsExtra [] = []
-rmdupsExtra ((k,t,v) : xs) = (k,t,v) : rmdupsExtra (filter ((/=k).fstExtra) xs)
+rmdupsExtra ((k,t) : xs) = (k,t) : rmdupsExtra (filter ((/=k).fst) xs)
 
-fstExtra :: (a,b,c) -> a
-fstExtra (x,_,_) = x 
+--fstExtra :: (a,b,c) -> a
+--fstExtra (x,_,_) = x 
 
 removeDuplicateExtraKeys :: Field -> Field
 removeDuplicateExtraKeys (Extra (xs)) = Extra (rmdupsExtra xs)
@@ -690,20 +702,40 @@ makeCagegory :: [String] -> String
 makeCagegory [] = []
 makeCagegory (x:xs) = " -c " ++ x ++ makeCagegory xs
 
-makeExtra :: [(String, String, String)] -> String
+makeExtra :: [(String, ExtraType)] -> String
 makeExtra [] = []
-makeExtra ((k,t,v):xs) = case t of
-                                "string" -> " --es " ++ k ++ " " ++ v ++ makeExtra xs
-                                "boolean" -> " --ez " ++ k ++ " " ++ v ++ makeExtra xs
-                                "integer" -> " --ei " ++ k ++ " " ++ v ++ makeExtra xs
-                                "long" -> " --el " ++ k ++ " " ++ v ++ makeExtra xs
-                                "float" -> " --ef " ++ k ++ " " ++ v ++ makeExtra xs
-                                "URI" -> " --eu " ++ k ++ " " ++ v ++ makeExtra xs
-                                "component name" -> " --ecn " ++ k ++ " " ++ v ++ makeExtra xs
-                                "array of integers" -> " --eia " ++ k ++ " " ++ v ++ makeExtra xs
-                                "array of longs" -> " --ela " ++ k ++ " " ++ v ++ makeExtra xs
-                                "array of floats" -> " --efa " ++ k ++ " " ++ v ++ makeExtra xs
-                                _ ->  " --es " ++ k ++ " " ++ v ++ makeExtra xs
+makeExtra ((k, StringType v) : xs)              = " --es " ++ k ++ " " ++ v ++ makeExtra xs
+makeExtra ((k, BooleanType v) : xs)             = " --ez " ++ k ++ " " ++ (show v) ++ makeExtra xs
+makeExtra ((k, IntegerType v) : xs)             = " --ei " ++ k ++ " " ++ (show v) ++ makeExtra xs
+makeExtra ((k, LongType v) : xs)                = " --el " ++ k ++ " " ++ (show v) ++ makeExtra xs
+makeExtra ((k, FloatType v) : xs)               = " --ef " ++ k ++ " " ++ (show v) ++ makeExtra xs
+makeExtra ((k, UriType v) : xs)                 = " --eu " ++ k ++ " " ++ v ++ makeExtra xs
+makeExtra ((k, ComponentType v1 v2) : xs)       = " --ecn " ++ k ++ " " ++ v1 ++ "/" ++ v2 ++ makeExtra xs
+makeExtra ((k, IntArray vs) : xs)               = " --eia " ++ k ++ " " ++ (makeIntValueArray vs) ++ makeExtra xs
+makeExtra ((k, LongArray vs) : xs)              = " --ela " ++ k ++ " " ++ (makeLongValueArray vs) ++ makeExtra xs
+makeExtra ((k, FloatArray vs) : xs)             = " --efa " ++ k ++ " " ++ (makeFloatValueArray vs) ++ makeExtra xs
+
+makeIntValueArray :: [Int] -> String
+makeIntValueArray [] = ""
+makeIntValueArray (x:[]) = (show x) ++ " "
+makeIntValueArray (x:xs) = (show x) ++ ", "
+
+makeLongValueArray :: [Integer] -> String
+makeLongValueArray [] = ""
+makeLongValueArray (x:[]) = (show x) ++ " "
+makeLongValueArray (x:xs) = (show x) ++ ", "
+
+makeFloatValueArray :: [Float] -> String
+makeFloatValueArray [] = ""
+makeFloatValueArray (x:[]) = (show x) ++ " "
+makeFloatValueArray (x:xs) = (show x) ++ ", "
+
+{-
+data ExtraType = StringType String | BooleanType Bool | IntegerType Int | LongType Integer | FloatType Float
+                 | UriType String | ComponentType String String
+                 | IntArray [Int] | LongArray [Integer] | FloatArray [Float] deriving (Show, Eq)
+-}
+
 
 addIntentSpecUsingInputIntent :: Intent -> IntentSpec -> IntentSpec
 addIntentSpecUsingInputIntent _ [] = []
@@ -747,7 +779,8 @@ castInt :: Int -> [String] -> Int
 castInt 0 (arg:args) = read arg :: Int
 castInt (n+1) (arg:args) = castInt n args
 
--- >ghc --make TestQuick.hs
+
+-- >ghc --make Main.hs
 
 
 

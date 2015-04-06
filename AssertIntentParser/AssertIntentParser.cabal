@@ -26,5 +26,5 @@ executable AssertIntentParser
                    QuickCheck,
                    Test,
                    TypeElements
-  main-is:         TestQuick.hs
+  main-is:         Main.hs
 
