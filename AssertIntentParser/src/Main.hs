@@ -566,92 +566,34 @@ instance Arbitrary Field where
                       14 -> do flg <- flagArbitrary 
                                return (Flag flg)
 
-makeExtraType = unGen arbitrary (mkQCGen (unsafePerformIO (getStdRandom (randomR (-9223372036854775807, 9223372036854775806))))) 15 :: [ExtraType]
 
 extraTupleList :: Gen [(String, ExtraType)]
-extraTupleList = listOf1 $ ((>*<) extraKeyElements (elements (makeExtraType)))
-
---extraTupleList' :: Gen [(String, ExtraType)]
---extraTupleList' = listOf1 $ ((>*<) extraKeyElements (oneof (arbitrary)))
+extraTupleList = listOf1 $ ((>*<) extraKeyElements (arbitrary))
 
 extraArbitrary :: Gen [(String, ExtraType)]
-extraArbitrary = listOf1 $ ((>*<) keyArbitrary (elements (makeExtraType)))
-
-{-
-instance (Arbitrary String, Arbitrary ExtraType) => Arbitrary (String, ExtraType) where
-  arbitrary = do n <- choose (1,2) :: Gen Int
-                 case n of
-                      1 -> do key <- extraKeyElements
-                              typeAndValue <- arbitrary
-                              return (key, typeAndValue)
--}
+extraArbitrary = listOf1 $ ((>*<) extraKeyElements (arbitrary))
 
 instance Arbitrary ExtraType where
-  arbitrary = do n <- choose (1,20) :: Gen Int
-                 case n of
-                      1 -> do str <- stringTypeElements
-                              return (StringType str)
-                              
-                      2 -> do bol <- booleanTypeElements
-                              return (BooleanType bol)
-                              
-                      3 -> do int <- intTypeElements
-                              return (IntegerType int)
-                              
-                      4 -> do log <- longTypeElements
-                              return (LongType log)
-                              
-                      5 -> do flo <- floatTypeElements
-                              return (FloatType flo)
-                              
-                      6 -> do uri <- uriTypeElements
-                              return (UriType uri)
-
-                      7 -> do pkg <- packageElements
-                              cls <- classElements
-                              return (ComponentType pkg cls)
-                              
-                      8 -> do inta <- intArrayElements
-                              return (IntArray inta)
-                      
-                      9 -> do longa <- longArrayElements
-                              return (LongArray longa)
-                              
-                      10 -> do floata <- floatArrayElements
-                               return (FloatArray floata)
-                               
-                      11 -> do str <- stringTypeArbitrary
-                               return (StringType str)
-                              
-                      12 -> do bol <- arbitrary
-                               return (BooleanType bol)
-                              
-                      13 -> do int <- arbitrary
-                               return (IntegerType int)
-                              
-                      14 -> do log <- arbitrary
-                               return (LongType log)
-                              
-                      15 -> do flo <- arbitrary
-                               return (FloatType flo)
-                              
-                      16 -> do uri <- uriTypeArbitrary
-                               return (UriType uri)
-
-                      17 -> do pkg <- componentsArbitrary
-                               cls <- componentsArbitrary
-                               return (ComponentType pkg cls)
-                              
-                      18 -> do inta <- arbitrary
-                               return (IntArray inta)
-                      
-                      19 -> do longa <- arbitrary
-                               return (LongArray longa)
-                              
-                      20 -> do floata <- arbitrary
-                               return (FloatArray floata)
-                              
-
+  arbitrary = oneof[ liftM StringType stringTypeElements,
+                     liftM BooleanType booleanTypeElements,
+                     liftM IntegerType intTypeElements,
+                     liftM LongType longTypeElements,
+                     liftM FloatType floatTypeElements,
+                     liftM UriType uriTypeElements,
+                     liftM2 ComponentType packageElements classElements,
+                     liftM IntArray intArrayElements,
+                     liftM LongArray longArrayElements,
+                     liftM FloatArray floatArrayElements,
+                     liftM StringType stringTypeArbitrary,
+                     liftM BooleanType arbitrary,
+                     liftM IntegerType arbitrary,
+                     liftM LongType arbitrary,
+                     liftM FloatType arbitrary,
+                     liftM UriType uriTypeArbitrary,
+                     liftM2 ComponentType componentsArbitrary componentsArbitrary,
+                     liftM IntArray arbitrary,
+                     liftM LongArray arbitrary,
+                     liftM FloatArray arbitrary]
 
 genField seed = unGen arbitrary (mkQCGen (unsafePerformIO (getStdRandom (randomR (-9223372036854775807, 9223372036854775806))))) 15 :: [Field]
 
@@ -716,7 +658,7 @@ makeCagegory (x:xs) = " -c " ++ x ++ makeCagegory xs
 
 makeExtra :: [(String, ExtraType)] -> String
 makeExtra [] = []
-makeExtra ((k, StringType v) : xs)              = " --es " ++ k ++ " " ++ v ++ makeExtra xs
+makeExtra ((k, StringType v) : xs)              = " --es " ++ k ++ " \"" ++ v ++ "\"" ++ makeExtra xs
 makeExtra ((k, BooleanType v) : xs)             = " --ez " ++ k ++ " " ++ (show v) ++ makeExtra xs
 makeExtra ((k, IntegerType v) : xs)             = " --ei " ++ k ++ " " ++ (show v) ++ makeExtra xs
 makeExtra ((k, LongType v) : xs)                = " --el " ++ k ++ " " ++ (show v) ++ makeExtra xs
