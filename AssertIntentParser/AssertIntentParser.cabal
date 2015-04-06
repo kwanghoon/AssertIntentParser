@@ -6,7 +6,6 @@ author:         kmp
 
 executable AssertIntentParser
   hs-source-dirs:  src
-  main-is:         TestQuick.hs
   build-depends:   
                    base >= 4,
                    Cabal >=1.18.1 && <1.19,
@@ -24,8 +23,8 @@ executable AssertIntentParser
                    IntentParser,
                    IntentParserWithDataStructure,
                    IntentParserWithQuickCheckForSemanticData,
-                   Main,
                    QuickCheck,
                    Test,
                    TypeElements
+  main-is:         TestQuick.hs
 
