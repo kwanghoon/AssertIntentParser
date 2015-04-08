@@ -305,7 +305,7 @@ extraSub = do symbol ","
             +++ return (Extra [])
 
 typeAndValue :: Parser ExtraType
-typeAndValue =  do symbol "string"
+typeAndValue =  do symbol "String"
                    v <- stringValue
                    return (StringType v)
                  +++ do symbol "int[]"
@@ -317,7 +317,7 @@ typeAndValue =  do symbol "string"
                  +++ do symbol "float[]"
                         v <- floatArrayValue
                         return (FloatArray v)
-                 +++ do symbol "bool"
+                 +++ do symbol "boolean"
                         v <- booleanValue
                         return (BooleanType v)
                  +++ do symbol "int"
@@ -672,24 +672,17 @@ makeExtra ((k, FloatArray vs) : xs)             = " --efa " ++ k ++ " " ++ (make
 makeIntValueArray :: [Int] -> String
 makeIntValueArray [] = ""
 makeIntValueArray (x:[]) = (show x) ++ " " ++ makeIntValueArray []
-makeIntValueArray (x:xs) = (show x) ++ ", " ++ makeIntValueArray xs
+makeIntValueArray (x:xs) = (show x) ++ "," ++ makeIntValueArray xs
 
 makeLongValueArray :: [Integer] -> String
 makeLongValueArray [] = ""
 makeLongValueArray (x:[]) = (show x) ++ " " ++ makeLongValueArray []
-makeLongValueArray (x:xs) = (show x) ++ ", " ++ makeLongValueArray xs
+makeLongValueArray (x:xs) = (show x) ++ "," ++ makeLongValueArray xs
 
 makeFloatValueArray :: [Float] -> String
 makeFloatValueArray [] = ""
 makeFloatValueArray (x:[]) = (show x) ++ " " ++ makeFloatValueArray []
-makeFloatValueArray (x:xs) = (show x) ++ ", " ++ makeFloatValueArray xs
-
-{-
-data ExtraType = StringType String | BooleanType Bool | IntegerType Int | LongType Integer | FloatType Float
-                 | UriType String | ComponentType String String
-                 | IntArray [Int] | LongArray [Integer] | FloatArray [Float] deriving (Show, Eq)
--}
-
+makeFloatValueArray (x:xs) = (show x) ++ "," ++ makeFloatValueArray xs
 
 addIntentSpecUsingInputIntent :: Intent -> IntentSpec -> IntentSpec
 addIntentSpecUsingInputIntent _ [] = []
