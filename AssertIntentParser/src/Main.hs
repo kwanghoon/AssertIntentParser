@@ -665,24 +665,14 @@ makeExtra ((k, LongType v) : xs)                = " --el " ++ k ++ " " ++ (show 
 makeExtra ((k, FloatType v) : xs)               = " --ef " ++ k ++ " " ++ (show v) ++ makeExtra xs
 makeExtra ((k, UriType v) : xs)                 = " --eu " ++ k ++ " " ++ v ++ makeExtra xs
 makeExtra ((k, ComponentType v1 v2) : xs)       = " --ecn " ++ k ++ " " ++ v1 ++ "/" ++ v2 ++ makeExtra xs
-makeExtra ((k, IntArray vs) : xs)               = " --eia " ++ k ++ " " ++ (makeIntValueArray vs) ++ makeExtra xs
-makeExtra ((k, LongArray vs) : xs)              = " --ela " ++ k ++ " " ++ (makeLongValueArray vs) ++ makeExtra xs
-makeExtra ((k, FloatArray vs) : xs)             = " --efa " ++ k ++ " " ++ (makeFloatValueArray vs) ++ makeExtra xs
+makeExtra ((k, IntArray vs) : xs)               = " --eia " ++ k ++ " " ++ (makeArrayValue vs) ++ makeExtra xs
+makeExtra ((k, LongArray vs) : xs)              = " --ela " ++ k ++ " " ++ (makeArrayValue vs) ++ makeExtra xs
+makeExtra ((k, FloatArray vs) : xs)             = " --efa " ++ k ++ " " ++ (makeArrayValue vs) ++ makeExtra xs
 
-makeIntValueArray :: [Int] -> String
-makeIntValueArray [] = ""
-makeIntValueArray (x:[]) = (show x) ++ " " ++ makeIntValueArray []
-makeIntValueArray (x:xs) = (show x) ++ "," ++ makeIntValueArray xs
-
-makeLongValueArray :: [Integer] -> String
-makeLongValueArray [] = ""
-makeLongValueArray (x:[]) = (show x) ++ " " ++ makeLongValueArray []
-makeLongValueArray (x:xs) = (show x) ++ "," ++ makeLongValueArray xs
-
-makeFloatValueArray :: [Float] -> String
-makeFloatValueArray [] = ""
-makeFloatValueArray (x:[]) = (show x) ++ " " ++ makeFloatValueArray []
-makeFloatValueArray (x:xs) = (show x) ++ "," ++ makeFloatValueArray xs
+makeArrayValue :: Show a => [a] -> String
+makeArrayValue [] = ""
+makeArrayValue (x:[]) = (show x) ++ " "
+makeArrayValue (x:xs) = (show x) ++ "," ++ makeArrayValue xs
 
 addIntentSpecUsingInputIntent :: Intent -> IntentSpec -> IntentSpec
 addIntentSpecUsingInputIntent _ [] = []
