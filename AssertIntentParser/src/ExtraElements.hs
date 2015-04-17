@@ -15,7 +15,7 @@ stringTypeElements = elements ["it is string value1",
                                "it is string value4",
                                "it is string value5"]
                                
-stringTypeArbitrary = listOf1 $ elements (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ [' ', '.', '_', '-', ':', '/', '?', '@'])
+stringTypeArbitrary = listOf1 $ elements (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ [' ', '.', '_', ':', '/', '?', '@'])
 
 booleanTypeElements = elements [True, False]
 
@@ -37,7 +37,7 @@ uriTypeElements = elements ["//username:password@host:8080/directory/file?query#
                             "query",
                             "fragment"]
 
-uriTypeArbitrary = listOf1 $ elements (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ ['.', '_', '-', ':', '/', '?', '@'])
+uriTypeArbitrary = listOf1 $ elements (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ ['.', '_', ':', '/', '?', '@'])
 
 
 --component is used ComponentsElements.hs

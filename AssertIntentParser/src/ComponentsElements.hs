@@ -11,4 +11,4 @@ classElements = elements ["com.example.android.notepad.NoteEditor",
                           ".MainActivity",
                           ".CafeActivity"]
 
-componentsArbitrary = listOf1 $ elements (['a'..'z'] ++ ['A'..'Z'] ++ ['.', '_', '-'])
+componentsArbitrary = listOf1 $ elements (['a'..'z'] ++ ['A'..'Z'] ++ ['.', '_'])

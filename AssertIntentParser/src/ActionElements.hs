@@ -6,4 +6,4 @@ actionElements = elements ["com.android.action.Edit",
                            "com.android.action.Add",
                            "com.android.action.Delete"]
                            
-actionArbitrary = listOf1 $ elements (['a'..'z'] ++ ['A'..'Z'] ++ ['.', '_', '-'])
+actionArbitrary = listOf1 $ elements (['a'..'z'] ++ ['A'..'Z'] ++ ['.', '_'])

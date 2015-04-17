@@ -9,4 +9,4 @@ flagElements = elements ["FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET",
 flagElementsList = listOf1 $ flagElements
 
 
-flagArbitrary = listOf1 $ listOf1 $ elements (['a'..'z'] ++ ['A'..'Z'] ++ ['.', '_', '-'])
+flagArbitrary = listOf1 $ listOf1 $ elements (['a'..'z'] ++ ['A'..'Z'] ++ ['.', '_'])

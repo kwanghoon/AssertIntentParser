@@ -177,8 +177,6 @@ alphanumOrOther = do s <- sat isAlphaNum
                           return s
                    +++ do s <- sat (== '.')
                           return s
-                   +++ do s <- sat (== '-')
-                          return s
                    +++ do s <- sat (== '/')
                           return s
                    +++ do s <- sat (== ':')
@@ -571,7 +569,7 @@ extraTupleList :: Gen [(String, ExtraType)]
 extraTupleList = listOf1 $ ((>*<) extraKeyElements (arbitrary))
 
 extraArbitrary :: Gen [(String, ExtraType)]
-extraArbitrary = listOf1 $ ((>*<) extraKeyElements (arbitrary))
+extraArbitrary = listOf1 $ ((>*<) keyArbitrary (arbitrary))
 
 instance Arbitrary ExtraType where
   arbitrary = oneof[ liftM StringType stringTypeElements,
@@ -580,7 +578,6 @@ instance Arbitrary ExtraType where
                      liftM LongType longTypeElements,
                      liftM FloatType floatTypeElements,
                      liftM UriType uriTypeElements,
-                     liftM2 ComponentType packageElements classElements,
                      liftM IntArray intArrayElements,
                      liftM LongArray longArrayElements,
                      liftM FloatArray floatArrayElements,
@@ -590,10 +587,17 @@ instance Arbitrary ExtraType where
                      liftM LongType arbitrary,
                      liftM FloatType arbitrary,
                      liftM UriType uriTypeArbitrary,
+                     liftM IntArray intArrayElements,
+                     liftM LongArray longArrayElements,
+                     liftM FloatArray floatArrayElements]
+{-
+                     liftM2 ComponentType packageElements classElements,
+
                      liftM2 ComponentType componentsArbitrary componentsArbitrary,
                      liftM IntArray arbitrary,
                      liftM LongArray arbitrary,
                      liftM FloatArray arbitrary]
+-}
 
 genField seed = unGen arbitrary (mkQCGen (unsafePerformIO (getStdRandom (randomR (-9223372036854775807, 9223372036854775806))))) 15 :: [Field]
 

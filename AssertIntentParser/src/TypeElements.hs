@@ -7,4 +7,4 @@ typeElements = elements ["video/*",
                          "text/plain"]
 
                          
-typArbitrary = listOf1 $ elements (['a'..'z'] ++ ['A'..'Z'] ++ ['.', '_', '-', '*', '/'])
+typArbitrary = listOf1 $ elements (['a'..'z'] ++ ['A'..'Z'] ++ ['.', '_', '*', '/'])
