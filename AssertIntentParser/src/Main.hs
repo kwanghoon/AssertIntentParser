@@ -23,7 +23,7 @@ import FlagElements
 
 import Data.Char
 import Control.Monad
-
+  
 infixr 5 +++
 
 --The monad of parsers
